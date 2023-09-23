@@ -1,3 +1,4 @@
+currentBuild.displayName = "Static-Website-#"+currentBuild.number
 pipeline {
     agent any
 
@@ -6,6 +7,12 @@ pipeline {
         DOCKER_CREDENTIALS = credentials('dockerhub-cred')
         IMAGE_VERSION = "${BUILD_NUMBER}"
     }
+
+    parameters {
+        string(name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Deployment environment')
+        booleanParam(name: 'DEPLOY', defaultValue: true, description: 'Deployment to environment')
+    }
+
 
     stages {
         stage ("Git sync"){
@@ -44,6 +51,11 @@ pipeline {
             }
         }
         stage ("Deploy"){
+            when{
+                expression{
+                    params.DEPLOY
+                }
+            }
             steps{
                 script{
                     if(isUnix()){
@@ -56,15 +68,15 @@ pipeline {
             }
         }
     }
-}
-post{
-    always{
-        script{
-            if(isUnix()){
-                sh "docker logout"
-            }
-            else{
-                bat "docker logout"
+    post{
+        always{
+            script{
+                if(isUnix()){
+                    sh "docker logout"
+                }
+                else{
+                    bat "docker logout"
+                }
             }
         }
     }
